@@ -1,10 +1,10 @@
 #lang racket
 (require net/url "middleware.rkt" "shared.rkt" "parse.rkt")
-(provide client)
+(provide request)
 (module+ test (require rackunit))
   
 ;; (or/c 'get 'post) string? #:content-type symbol? (dict-of symbol? any/c)
-(define (client method url #:request-map [request-map null])
+(define (request method url #:request-map [request-map null])
   (call-middleware (req method (string->url url) request-map)))
 
 ;; req? -> resp?
@@ -32,7 +32,7 @@
 
 (module+ test 
   (let ()
-    (define resp (client 'get "http://www.google.com"))
+    (define resp (request 'get "http://www.google.com"))
     (check-equal? (resp-code resp) 200)))
     
     
