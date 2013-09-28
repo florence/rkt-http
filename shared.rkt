@@ -6,5 +6,6 @@
 
 ;; (or/c 'get 'post) uri? (or/c symbol? string?) (dict-of symbol? string?)
 (struct req (method uri content-type request-map) #:transparent)
-;; number? any/c (dict-of symbol? any/c)
-(struct resp (content-type status body header/raw headers) #:transparent)
+
+;; string? number? string? any/c (dict-of symbol? any/c)
+(struct resp (content-type code status body headers) #:transparent)
