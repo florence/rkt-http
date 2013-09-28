@@ -39,7 +39,11 @@
     (check-equal? (resp-code resp) 200))
   
   (let ()
-    (check-exn values (thunk (request #f "http://www.google.com")))))
+    (check-exn values (thunk (request #f "http://www.google.com"))))
+  (let ()
+    ;; this redirects, testing that
+    (define resp (request 'get "http://google.com"))
+    (check-equal? (resp-code resp) 200)))
     
     
   

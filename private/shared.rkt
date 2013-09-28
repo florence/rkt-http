@@ -2,6 +2,7 @@
 (provide 
  request-map-ref
  request-map-set
+ header-map-ref
  method/c
  (struct-out req)
  (struct-out resp))
@@ -19,3 +20,5 @@
 (define (request-map-set a-req key val)
   (struct-copy req a-req
                [request-map (dict-set (req-request-map a-req) key val)]))
+(define (header-map-ref a-resp key [fail (lambda () #f)])
+  (dict-ref (resp-headers a-resp) key fail))

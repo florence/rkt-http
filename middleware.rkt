@@ -13,7 +13,8 @@ this module provides the basic middleware for rkt-http
 (module+ test (require rackunit))
 
 
-(define middleware/c (recursive-contract (-> middleware/c (-> req? resp?))))
+(define request-response/c (-> req? resp?))
+(define middleware/c (-> request-response/c request-response/c))
 
 
 (define RETRY-LIMIT 10)
@@ -23,7 +24,9 @@ this module provides the basic middleware for rkt-http
   (syntax-case stx ()
     [(_ [name thunk] ...)
      #'(begin
-         (provide middleware name ...)
+         (provide (contract-out
+                   [middleware (listof (parameter/c middleware/c))]
+                   [name (parameter/c middleware/c)] ...))
          (define name (make-parameter thunk)) ...
          (define middleware (list name ...)))]))
 
@@ -49,12 +52,12 @@ this module provides the basic middleware for rkt-http
   (lambda (client)
     (lambda (a-req)
       (let loop ([count 0] [a-req a-req])
-        (define a-resp (client req))
-        (if (or (not (eq? 302 (resp-code resp))) (eq? count RETRY-LIMIT))
-            resp
+        (define a-resp (client a-req))
+        (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
+            a-resp
             (loop (add1 count)
                   (struct-copy req a-req
-                               [uri (string->url (request-map-ref req 'location))]))))))]
+                               [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))]
  [content-type
   (make-middleware
    #:req 
