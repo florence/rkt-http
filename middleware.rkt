@@ -9,12 +9,16 @@ this module provides the basic middleware for rkt-http
                         (#:req (-> req? req?) #:resp (-> resp? resp?))
                         middleware/c)]))
                     
-(require "private/shared.rkt")
+(require "private/shared.rkt" net/url)
 (module+ test (require rackunit))
 
 
 (define middleware/c (recursive-contract (-> middleware/c (-> req? resp?))))
 
+
+(define RETRY-LIMIT 10)
+    
+    
 (define-syntax (create-middleware stx)
   (syntax-case stx ()
     [(_ [name thunk] ...)
@@ -41,6 +45,16 @@ this module provides the basic middleware for rkt-http
             (values (string->symbol (string-downcase (~a k))) v)))
         (request-map-set a-req 'header new-headers)]
        [else a-req])))]
+ [redirect
+  (lambda (client)
+    (lambda (a-req)
+      (let loop ([count 0] [a-req a-req])
+        (define a-resp (client req))
+        (if (or (not (eq? 302 (resp-code resp))) (eq? count RETRY-LIMIT))
+            resp
+            (loop (add1 count)
+                  (struct-copy req a-req
+                               [uri (string->url (request-map-ref req 'location))]))))))]
  [content-type
   (make-middleware
    #:req 
