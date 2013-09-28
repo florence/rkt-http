@@ -17,40 +17,43 @@ this module provides the basic middleware for rkt-http
 
 (define-syntax (create-middleware stx)
   (syntax-case stx ()
-    [(_ [(name callback req) body ...] ...)
+    [(_ [name thunk] ...)
      #'(begin
          (provide middleware name ...)
-         (define name 
-           (make-parameter
-            (lambda (callback)
-              (lambda (req)
-                body ...)))) ...
+         (define name (make-parameter thunk)) ...
          (define middleware (list name ...)))]))
-        
-
-
-
-(create-middleware
-
- [(content-type client a-req)
-  (define ctype (req-content-type a-req)) 
-  (define parsed-ctype 
-    (if (string? ctype)
-        ctype
-        (string-append "application/" (~a ctype))))
-  (define nrequest
-    (struct-copy req a-req
-                 [content-type parsed-ctype]))
-  (client nrequest)])
-
-
-
-
 
 (define (make-middleware #:req [req values] #:resp [resp values])
   (lambda (client)
     (lambda (r)
       (resp (client (req r))))))
+
+(create-middleware
+ [lowercase-headers
+  (make-middleware
+   #:req
+   (lambda (a-req)
+     (define cur-headers (request-map-ref a-req 'header))
+     (cond
+       [cur-headers
+        (define new-headers
+          (for/hash ([(k v) (in-dict cur-headers)])
+            (values (string->symbol (string-downcase (~a k))) v)))
+        (request-map-set a-req 'header new-headers)]
+       [else a-req])))]
+ [content-type
+  (make-middleware
+   #:req 
+   (lambda (a-req)
+     (define ctype (request-map-ref a-req 'content-type))
+     (cond
+       [ctype
+        (define parsed-ctype 
+          (if (string? ctype)
+              ctype
+              (string-append "application/" (~a ctype))))
+        (request-map-set a-req 'content-type parsed-ctype)]
+       [else a-req])))])
   
   
 
@@ -59,8 +62,11 @@ this module provides the basic middleware for rkt-http
     (check-equal? (((middleware) values) input)
                   output))
   (check-middleware content-type 
-                    (req 'get #f 'json null)
-                    (req 'get #f "application/json" null)))
+                    (req 'get #f #hash((content-type . json)))
+                    (req 'get #f #hash((content-type . "application/json"))))
+  (check-middleware content-type 
+                    (req 'get #f null)
+                    (req 'get #f null)))
   
   
       
