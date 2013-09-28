@@ -1,6 +1,7 @@
 #lang racket
-(require net/url "middleware.rkt" "shared.rkt" "parse.rkt")
-(provide request)
+(provide request method/c (struct-out req) (struct-out resp))
+
+(require net/url "middleware.rkt" "private/shared.rkt" "private/parse.rkt")
 (module+ test (require rackunit))
   
 ;; (or/c 'get 'post) string? #:content-type symbol? (dict-of symbol? any/c)
@@ -21,7 +22,9 @@
       [(post)   post-impure-port]
       [(delete) delete-impure-port]
       [(put)    put-impure-port]
-      [(head)   head-impure-port])
+      [(head)   head-impure-port]
+      ;; TODO error class
+      [(#f) (error 'http "method not set")])
     (req-uri req)
     (build-headers req))))
 
@@ -33,7 +36,10 @@
 (module+ test 
   (let ()
     (define resp (request 'get "http://www.google.com"))
-    (check-equal? (resp-code resp) 200)))
+    (check-equal? (resp-code resp) 200))
+  
+  (let ()
+    (check-exn values (thunk (request #f "http://www.google.com")))))
     
     
   

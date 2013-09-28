@@ -9,7 +9,7 @@ this module provides the basic middleware for rkt-http
                         (#:req (-> req? req?) #:resp (-> resp? resp?))
                         middleware/c)]))
                     
-(require "shared.rkt")
+(require "private/shared.rkt")
 (module+ test (require rackunit))
 
 

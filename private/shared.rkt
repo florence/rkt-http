@@ -2,11 +2,13 @@
 (provide 
  request-map-ref
  request-map-set
+ method/c
  (struct-out req)
  (struct-out resp))
 
+(define method/c (or/c 'get 'post 'put 'delete 'head #f))
 
-;; (or/c 'get 'post) uri? (or/c symbol? string?) (dict-of symbol? string?)
+;; method/c uri? (or/c symbol? string?) (dict-of symbol? string?)
 (struct req (method uri request-map) #:transparent)
 
 ;; string? number? string? any/c (dict-of symbol? any/c)
