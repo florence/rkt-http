@@ -9,7 +9,9 @@ this module provides the basic middleware for rkt-http
                         (#:req (-> req? req?) #:resp (-> resp? resp?))
                         middleware/c)]))
                     
-(require "private/shared.rkt" net/url)
+(require "private/shared.rkt" 
+         "parsers.rkt"
+         net/url)
 (module+ test (require rackunit))
 
 
@@ -35,11 +37,6 @@ this module provides the basic middleware for rkt-http
     (lambda (r)
       (resp (client (req r))))))
 
-(create-middleware
- [lowercase-headers in:lowercase-headers]
- [redirect in:redirect]
- [content-type in:content-type]
- [retry values])
 
 ;; request only middleware to lowercase all header field names
 (define in:lowercase-headers
@@ -79,8 +76,22 @@ this module provides the basic middleware for rkt-http
               (string-append "application/" (~a ctype))))
         (request-map-set a-req 'content-type parsed-ctype)]
        [else a-req]))))
+;; middleware to convert xexprs and that ilk to strings given the content type
+(define in:body-convert
+  (make-middleware
+   #:req (compose json-request-body-converter xml-request-body-converter)
+   #:resp (compose json-resp-body-converter xml-resp-body-converter)))
+     
   
-  
+(create-middleware
+ [lowercase-headers in:lowercase-headers]
+ [redirect in:redirect]
+ ;; header middleware
+ [content-type in:content-type]
+ ;; final processing
+ [body-convert in:body-convert]
+ [retry values])
+
 
 (module+ test
   (define (check-middleware middleware input output)
