@@ -1,26 +1,23 @@
 #lang racket
 (provide 
  (contract-out
-  [request (->* (method/c string?) (#:request-map dict?) resp?)]
+  [request (->* (method/c string?) 
+                (#:request-map dict? #:processors (listof processor/c))
+                resp?)]
   [request/no-process (-> method/c string? resp?)]
-  [request/processors
-   (->* (method/c string?) (#:request-map dict? #:processors (listof middleware/c)) resp?)]
   [method/c contract?]
-  [middleware/c contract?])
+  [processor/c contract?])
  (struct-out req)
  (struct-out resp))
 
-(require net/url "middleware.rkt" "private/shared.rkt" "private/parse.rkt")
+(require net/url "processors.rkt" "private/shared.rkt" "private/parse.rkt")
 (module+ test (require rackunit))
 
-(define (request method url #:request-map [request-map null])
-  (request/processors method url #:request-map request-map))
+(define (request method url #:request-map [request-map null] #:processors [processors processors])
+  (call-middleware (req method (string->url url) request-map) processors))
 
 (define (request/no-process method url)
-  (request/processors method url #:request-map null #:processors null))
-
-(define (request/processors method url #:request-map [request-map null] #:processors [processors middleware])
-  (call-middleware (req method (string->url url) request-map) processors))
+  (request method url #:request-map null #:processors null))
 
 ;; req? -> resp?
 (define (call-middleware req middleware)
