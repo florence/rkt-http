@@ -144,4 +144,3 @@ this module provides bindings to convert request and response bodies to and from
      (resp "text/xml" 200  "OK"
            '(test ())
            #hash((content-type . "text/xml; charset=UTF-8"))))))
-  

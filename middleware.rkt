@@ -8,7 +8,7 @@ this module provides the basic middleware for rkt-http
   [make-middleware (->* ()
                         (#:req (-> req? req?) #:resp (-> resp? resp?))
                         middleware/c)]))
-                    
+
 (require "private/shared.rkt" 
          "parsers.rkt"
          net/url)
@@ -20,8 +20,8 @@ this module provides the basic middleware for rkt-http
 
 
 (define RETRY-LIMIT 10)
-    
-    
+
+
 (define-syntax (create-middleware stx)
   (syntax-case stx ()
     [(_ [name thunk] ...)
@@ -81,8 +81,8 @@ this module provides the basic middleware for rkt-http
   (make-middleware
    #:req (compose json-request-body-converter xml-request-body-converter)
    #:resp (compose json-resp-body-converter xml-resp-body-converter)))
-     
-  
+
+
 (create-middleware
  [lowercase-headers in:lowercase-headers]
  [redirect in:redirect]
@@ -103,8 +103,7 @@ this module provides the basic middleware for rkt-http
   (check-middleware content-type 
                     (req 'get #f null)
                     (req 'get #f null)))
-  
-  
-      
-  
-  
+
+
+
+

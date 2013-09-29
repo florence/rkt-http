@@ -8,7 +8,21 @@
 
 @defmodule[rkt-http]
 
-@defproc[(request (method (or/c 'get 'post 'delete 'put 'head))
+(or/c 'get 'post 'delete 'put 'head)
+
+@defproc[(request/no-process (method method/c)
+                             (url string?))
+         resp?]
+
+@defproc[(request (method method/c)
                   (url string?)
                   (#:request-map request-map dict? null))
          resp?]
+
+@defproc[(request/with-processors
+          (method method/c)
+          (url string?)
+          (#:request-map request-map dict? null)
+          (#:processors processors (listof middleware/c) default-middleware))
+         resp?]
+
