@@ -19,7 +19,7 @@
                   (#:request-map request-map dict? null))
          resp?]
 
-@defproc[(request/with-processors
+@defproc[(request/processors
           (method method/c)
           (url string?)
           (#:request-map request-map dict? null)

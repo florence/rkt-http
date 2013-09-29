@@ -3,7 +3,7 @@
  (contract-out
   [request (->* (method/c string?) (#:request-map dict?) resp?)]
   [request/no-process (-> method/c string? resp?)]
-  [request/with-processors
+  [request/processors
    (->* (method/c string?) (#:request-map dict? #:processors (listof middleware/c)) resp?)]
   [method/c contract?]
   [middleware/c contract?])
@@ -13,14 +13,13 @@
 (require net/url "middleware.rkt" "private/shared.rkt" "private/parse.rkt")
 (module+ test (require rackunit))
 
-;; (or/c 'get 'post) string? #:content-type symbol? (dict-of symbol? any/c)
 (define (request method url #:request-map [request-map null])
-  (request/with-processors method url #:request-map request-map))
+  (request/processors method url #:request-map request-map))
 
 (define (request/no-process method url)
-  (request/with-processors method url #:request-map null #:processors null))
+  (request/processors method url #:request-map null #:processors null))
 
-(define (request/with-processors method url #:request-map [request-map null] #:processors [processors middleware])
+(define (request/processors method url #:request-map [request-map null] #:processors [processors middleware])
   (call-middleware (req method (string->url url) request-map) processors))
 
 ;; req? -> resp?
