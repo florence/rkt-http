@@ -16,7 +16,7 @@ this module provides the basic middleware for rkt-http
 
 
 (define request-response/c (-> req? resp?))
-(define processor/c (-> request-response/c request-response/c))
+(define processor/c (parameter/c (-> request-response/c request-response/c)))
 
 
 (define RETRY-LIMIT 10)
@@ -27,8 +27,8 @@ this module provides the basic middleware for rkt-http
     [(_ [name thunk] ...)
      #'(begin
          (provide (contract-out
-                   [processors (listof (parameter/c processor/c))]
-                   [name (parameter/c processor/c)] ...))
+                   [processors (listof processor/c)]
+                   [name processor/c] ...))
          (define name (make-parameter thunk)) ...
          (define processors (list name ...)))]))
 
