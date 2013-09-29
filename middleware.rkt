@@ -36,7 +36,13 @@ this module provides the basic middleware for rkt-http
       (resp (client (req r))))))
 
 (create-middleware
- [lowercase-headers
+ [lowercase-headers in:lowercase-headers]
+ [redirect in:redirect]
+ [content-type in:content-type]
+ [retry values])
+
+;; request only middleware to lowercase all header field names
+(define in:lowercase-headers
   (make-middleware
    #:req
    (lambda (a-req)
@@ -47,8 +53,9 @@ this module provides the basic middleware for rkt-http
           (for/hash ([(k v) (in-dict cur-headers)])
             (values (string->symbol (string-downcase (~a k))) v)))
         (request-map-set a-req 'header new-headers)]
-       [else a-req])))]
- [redirect
+       [else a-req]))))
+;; middleware to control redirecting
+(define in:redirect
   (lambda (client)
     (lambda (a-req)
       (let loop ([count 0] [a-req a-req])
@@ -57,8 +64,9 @@ this module provides the basic middleware for rkt-http
             a-resp
             (loop (add1 count)
                   (struct-copy req a-req
-                               [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))]
- [content-type
+                               [uri (string->url (~a (header-map-ref a-resp 'location)))])))))))
+;; request only middleware to handle setting the content-type header
+(define in:content-type
   (make-middleware
    #:req 
    (lambda (a-req)
@@ -70,7 +78,7 @@ this module provides the basic middleware for rkt-http
               ctype
               (string-append "application/" (~a ctype))))
         (request-map-set a-req 'content-type parsed-ctype)]
-       [else a-req])))])
+       [else a-req]))))
   
   
 
