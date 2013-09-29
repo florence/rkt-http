@@ -29,13 +29,14 @@ this module provides the basic middleware for rkt-http
          (provide (contract-out
                    [processors (listof processor/c)]
                    [name processor/c] ...))
-         (define name (make-parameter thunk)) ...
+         (define name thunk) ...
          (define processors (list name ...)))]))
 
 (define (make-processor #:req [req values] #:resp [resp values])
-  (lambda (client)
-    (lambda (r)
-      (resp (client (req r))))))
+  (make-parameter
+   (lambda (client)
+     (lambda (r)
+       (resp (client (req r)))))))
 
 
 ;; request only middleware to lowercase all header field names
@@ -53,15 +54,16 @@ this module provides the basic middleware for rkt-http
        [else a-req]))))
 ;; middleware to control redirecting
 (define in:redirect
-  (lambda (client)
-    (lambda (a-req)
-      (let loop ([count 0] [a-req a-req])
-        (define a-resp (client a-req))
-        (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
-            a-resp
-            (loop (add1 count)
-                  (struct-copy req a-req
-                               [uri (string->url (~a (header-map-ref a-resp 'location)))])))))))
+  (make-parameter
+   (lambda (client)
+     (lambda (a-req)
+       (let loop ([count 0] [a-req a-req])
+         (define a-resp (client a-req))
+         (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
+             a-resp
+             (loop (add1 count)
+                   (struct-copy req a-req
+                                [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))))
 ;; request only middleware to handle setting the content-type header
 (define in:content-type
   (make-processor
@@ -90,7 +92,7 @@ this module provides the basic middleware for rkt-http
  [content-type in:content-type]
  ;; final processing
  [body-convert in:body-convert]
- [retry values])
+ [retry (make-parameter values)])
 
 
 (module+ test

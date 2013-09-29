@@ -6,7 +6,10 @@
                 resp?)]
   [request/no-process (-> method/c string? resp?)]
   [method/c contract?]
-  [processor/c contract?])
+  [processor/c contract?]
+  [make-processor (->* ()
+                       (#:req (-> req? req?) #:resp (-> resp? resp?))
+                       processor/c)])
  (rename-out [processors default-processors])
  (struct-out req)
  (struct-out resp))

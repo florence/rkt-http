@@ -34,7 +34,6 @@ where the keys are the header fields and the values are the header values. These
 Before the @racket[resp] is returned to the bottom of the processor chain the headers @racket[dict] is normalize so that all keys
 are lowercased and converted to symbols.
 
-
 @defthing[processor/c (parameter/c (-> (-> req? resp?) (-> req? resp?)))]
 A processors is used to create the processor chain. Each processor will be given the part of the processor
 chair below it, and returns the new function chain with itself on top. All processors are parameters to allow for configuring
@@ -50,3 +49,8 @@ the @racket[body-convert] processor to @racket[values]:
 @racketblock[
         (parameterize ([body-convert values])
           (request 'get "www.google.com"))]
+
+@defproc[(make-processor 
+          (#:req  req (-> req? req?)  values)
+          (#:resp resp (-> resp? resp?) values))
+         processor/c]
