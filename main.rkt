@@ -7,6 +7,7 @@
   [request/no-process (-> method/c string? resp?)]
   [method/c contract?]
   [processor/c contract?]
+  [no-op processor/c]
   [make-processor (->* ()
                        (#:req (-> req? req?) #:resp (-> resp? resp?))
                        processor/c)])

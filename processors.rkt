@@ -5,6 +5,7 @@ this module provides the basic middleware for rkt-http
 (provide 
  (contract-out
   [processor/c contract?]
+  [no-op processor/c]
   [make-processor (->* ()
                         (#:req (-> req? req?) #:resp (-> resp? resp?))
                         processor/c)]))
@@ -16,7 +17,7 @@ this module provides the basic middleware for rkt-http
 
 
 (define request-response/c (-> req? resp?))
-(define processor/c (parameter/c (-> request-response/c request-response/c)))
+(define processor/c (-> (-> request-response/c request-response/c)))
 
 
 (define RETRY-LIMIT 10)
@@ -33,6 +34,11 @@ this module provides the basic middleware for rkt-http
          (define processors (list name ...)))]))
 
 (define (make-processor #:req [req values] #:resp [resp values])
+  (thunk
+   (lambda (client)
+     (lambda (r)
+       (resp (client (req r)))))))
+(define (make-processor/parameter #:req [req values] #:resp [resp values])
   (make-parameter
    (lambda (client)
      (lambda (r)
@@ -41,7 +47,7 @@ this module provides the basic middleware for rkt-http
 
 ;; request only middleware to lowercase all header field names
 (define in:lowercase-headers
-  (make-processor
+  (make-processor/parameter
    #:req
    (lambda (a-req)
      (define cur-headers (request-map-ref a-req 'header))
@@ -66,7 +72,7 @@ this module provides the basic middleware for rkt-http
                                 [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))))
 ;; request only middleware to handle setting the content-type header
 (define in:content-type
-  (make-processor
+  (make-processor/parameter
    #:req 
    (lambda (a-req)
      (define ctype (request-map-ref a-req 'content-type))
@@ -80,10 +86,11 @@ this module provides the basic middleware for rkt-http
        [else a-req]))))
 ;; middleware to convert xexprs and that ilk to strings given the content type
 (define in:body-convert
-  (make-processor
+  (make-processor/parameter
    #:req (compose json-request-body-converter xml-request-body-converter)
    #:resp (compose json-resp-body-converter xml-resp-body-converter)))
-
+;; a no-op processor
+(define no-op (thunk values))
 
 (create-processor
  [lowercase-headers in:lowercase-headers]
