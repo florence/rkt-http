@@ -34,18 +34,16 @@ this module provides the basic middleware for rkt-http
          (define processors (list name ...)))]))
 
 (define (make-processor #:req [req values] #:resp [resp values])
-  (thunk
-   (lambda (client)
-     (lambda (r)
-       (resp (client (req r)))))))
+  (thunk (make-inner-processor req resp)))
 (define (make-processor/parameter #:req [req values] #:resp [resp values])
-  (make-parameter
-   (lambda (client)
-     (lambda (r)
-       (resp (client (req r)))))))
+  (make-parameter (make-inner-processor req resp)))
+(define (make-inner-processor req resp)
+  (lambda (client)
+    (lambda (r)
+      (resp (client (req r))))))
 
 
-;; request only middleware to lowercase all header field names
+;; request only processor to lowercase all header field names
 (define in:lowercase-headers
   (make-processor/parameter
    #:req
@@ -58,7 +56,7 @@ this module provides the basic middleware for rkt-http
             (values (string->symbol (string-downcase (~a k))) v)))
         (request-map-set a-req 'header new-headers)]
        [else a-req]))))
-;; middleware to control redirecting
+;; processor to control redirecting
 (define in:redirect
   (make-parameter
    (lambda (client)
@@ -70,7 +68,7 @@ this module provides the basic middleware for rkt-http
              (loop (add1 count)
                    (struct-copy req a-req
                                 [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))))
-;; request only middleware to handle setting the content-type header
+;; request only processor to handle setting the content-type header
 (define in:content-type
   (make-processor/parameter
    #:req 
@@ -84,7 +82,7 @@ this module provides the basic middleware for rkt-http
               (string-append "application/" (~a ctype))))
         (request-map-set a-req 'content-type parsed-ctype)]
        [else a-req]))))
-;; middleware to convert xexprs and that ilk to strings given the content type
+;; processor to convert xexprs and that ilk to strings given the content type
 (define in:body-convert
   (make-processor/parameter
    #:req (compose json-request-body-converter xml-request-body-converter)
@@ -103,15 +101,20 @@ this module provides the basic middleware for rkt-http
 
 
 (module+ test
-  (define (check-middleware middleware input output)
-    (check-equal? (((middleware) values) input)
+  (define (check-req-processor processor input output)
+    (check-equal? (((processor) values) input)
                   output))
-  (check-middleware content-type 
+  (check-req-processor content-type 
                     (req 'get #f #hash((content-type . json)))
                     (req 'get #f #hash((content-type . "application/json"))))
-  (check-middleware content-type 
+  (check-req-processor content-type 
                     (req 'get #f null)
-                    (req 'get #f null)))
+                    (req 'get #f null))
+  (check-req-processor lowercase-headers
+                    (req 'get #f #hash((header . #hash((TestHEadEr . "value1")
+                                                        ("E3xDg" . "value2")))))
+                    (req 'get #f #hash((header . #hash((testheader . "value1")
+                                                        (e3xdg . "value2")))))))
 
 
 
