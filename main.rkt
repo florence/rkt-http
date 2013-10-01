@@ -65,8 +65,7 @@
   (let ()
      (parameterize ([retry values]) ;;testing parameterize the processors
       (define resp (request 'get "http://www.google.com"))
-      (check-equal? (resp-code resp) 200)))
-  
+      (check-equal? (resp-code resp) 200))) 
   (let ()
     (check-exn values (thunk (request #f "http://www.google.com"))))
   (let ()
