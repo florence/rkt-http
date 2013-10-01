@@ -30,13 +30,14 @@
 
 ;; req? -> resp?
 (define (call-middleware req processors)
-  ((for/fold ([call http-invoke]) ([p processors])
+  (define chain
+    (for/fold ([call http-invoke]) ([p processors])
      (define processor
        (if (not (processor-parameter-wrapper? p))
            p
-           (processor-parameter-wrapper-processor p)))
-     ((processor) call))
-   req))
+           ((processor-parameter-wrapper-processor p))))
+     (processor call)))
+   (chain req))
 
 ;; req? -> resp?
 (define (http-invoke req)
@@ -61,12 +62,22 @@
   (let ()
     (define resp (request 'get "http://www.google.com"))
     (check-equal? (resp-code resp) 200))
+  (let ()
+     (parameterize ([retry values]) ;;testing parameterize the processors
+      (define resp (request 'get "http://www.google.com"))
+      (check-equal? (resp-code resp) 200)))
   
   (let ()
     (check-exn values (thunk (request #f "http://www.google.com"))))
   (let ()
     ;; this redirects, testing that
     (define resp (request 'get "http://google.com"))
+    (check-equal? (resp-code resp) 200))
+  
+  (let ()
+    (define resp (request 'get 
+                          "http://www.google.com"
+                          #:processors (list (retry))))
     (check-equal? (resp-code resp) 200)))
 
 

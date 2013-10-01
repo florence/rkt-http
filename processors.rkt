@@ -22,12 +22,14 @@ this module provides the basic middleware for rkt-http
 (define-syntax (create-processor stx)
   (syntax-case stx ()
     [(_ [name thunk] ...)
+     (with-syntax ([(n ...) (generate-temporaries #'(name ...))])
      #'(begin
          (provide (contract-out
                    [processors (listof processor/c)]
-                   [name processor/c] ...))
-         (define name (wrap-processor thunk)) ...
-         (define processors (list name ...)))]))
+                   [name (parameter/c processor/c)] ...))
+         (define n (wrap-processor thunk)) ...
+         (define name (processor-parameter-wrapper-processor n)) ...
+         (define processors (list n ...))))]))
 
 (define (make-processor #:req [req values] #:resp [resp values])
   (lambda (client)
@@ -93,7 +95,7 @@ this module provides the basic middleware for rkt-http
 
 (module+ test
   (define (check-req-processor processor input output)
-    (check-equal? ((((processor-parameter-wrapper-processor processor)) values) input)
+    (check-equal? (((processor) values) input)
                   output))
   (check-req-processor content-type 
                     (req 'get #f #hash((content-type . json)))
@@ -116,7 +118,7 @@ this module provides the basic middleware for rkt-http
           response1
           response2))
     (check-equal?
-     ((((processor-parameter-wrapper-processor redirect)) client) req1)
+     (((redirect) client) req1)
      response2)))
 
 
