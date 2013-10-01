@@ -114,7 +114,19 @@ this module provides the basic middleware for rkt-http
                     (req 'get #f #hash((header . #hash((TestHEadEr . "value1")
                                                         ("E3xDg" . "value2")))))
                     (req 'get #f #hash((header . #hash((testheader . "value1")
-                                                        (e3xdg . "value2")))))))
+                                                        (e3xdg . "value2"))))))
+  ;; testing the default redirect client
+  (let ()
+    (define req1 (req 'get #f null))
+    (define response1 (resp "text/tsxt" 301 "anything" "" null))
+    (define response2 (resp "text/tsxt" 500 "anything" "" null))
+    (define (client v)
+      (if (equal? v req1)
+          response1
+          response2))
+    (check-equal?
+     (((redirect) client) req1)
+     response2)))
 
 
 
