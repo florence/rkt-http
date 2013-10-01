@@ -15,7 +15,11 @@
  (struct-out req)
  (struct-out resp))
 
-(require net/url "processors.rkt" "private/shared.rkt" "private/parse.rkt")
+(require net/url 
+         "processors.rkt"
+         "private/shared.rkt"
+         "private/parse.rkt"
+         "private/processors.rkt")
 (module+ test (require rackunit))
 
 (define (request method url #:request-map [request-map null] #:processors [processors processors])
@@ -25,9 +29,13 @@
   (request method url #:request-map null #:processors null))
 
 ;; req? -> resp?
-(define (call-middleware req middleware)
-  ((for/fold ([call http-invoke]) ([m middleware])
-     ((m) call))
+(define (call-middleware req processors)
+  ((for/fold ([call http-invoke]) ([p processors])
+     (define processor
+       (if (not (processor-parameter-wrapper? p))
+           p
+           (processor-parameter-wrapper-processor p)))
+     ((processor) call))
    req))
 
 ;; req? -> resp?

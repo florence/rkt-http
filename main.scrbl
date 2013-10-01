@@ -34,11 +34,10 @@ where the keys are the header fields and the values are the header values. These
 Before the @racket[resp] is returned to the bottom of the processor chain the headers @racket[dict] is normalize so that all keys
 are lowercased and converted to symbols.
 
-@defthing[processor/c (-> (-> (-> req? resp?) (-> req? resp?)))]
+@defthing[processor/c (-> (-> req? resp?) (-> req? resp?))]
 A processors is used to create the processor chain. Each processor will be given the part of the processor
 chair below it, and returns the new function chain with itself on top. A processor will, generally, do its processing on the 
-request, call the chain below it, and preform post prosessing on the response. All processors are thunks to allow for them to parameters.
-All processor in the default chain are thus, to allow configuring behaviour without having to rebuild the entire processor chain.
+request, call the chain below it, and preform post prosessing on the response.
 
 @defthing[method/c (or/c 'get 'post 'delete 'put 'head #f)]
 Contract for http methods. If a method is @racket[#f] it expected to be replace by some processor.
@@ -75,7 +74,7 @@ However, some processors can not be written with make-processor. For example, to
 error from twitter.com after some (un)reasonable wait period, we need something a little more involved:
 
 @racketblock[
-             (define (((retry-twitter-10-times) chain) a-req)
+             (define ((retry-twitter-10-times chain) a-req)
                (let retry-loop ([count 0] [a-resp (client a-req)])
                  (cond
                    [(and (< count 10) (= 420 (resp-code a-resp)))
