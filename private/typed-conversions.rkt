@@ -19,3 +19,5 @@
                                   [value : Bytes])])
 (require/typed/provide web-server/http/request
                        [read-headers (Input-Port -> (Listof header))])
+(require/typed/provide racket/base
+                       [hasheq (All (A B) (-> (HashTable A B)))])

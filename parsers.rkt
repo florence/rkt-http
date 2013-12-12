@@ -16,8 +16,6 @@ this module provides bindings to convert request and response bodies to and from
                [#:opaque Xexpr xexpr?]
                [(xexpr->string x:xexpr->string) (Xexpr -> String)]
                [(string->xexpr x:string->xexpr) (String -> Xexpr)])
-(module+ test 
-  (require typed/rackunit "private/typed-conversions.rkt"))
 
 (: make-body-converter : (All (R V P) ((R -> Any) (V -> P) (R -> V) (R P -> R) -> (R -> R))))
 ;; makes a function that takes in an R, checks if it matches recognize?, and sets the value via parse
@@ -105,67 +103,3 @@ this module provides bindings to convert request and response bodies to and from
   (make-response-body-converter json-resp-body? json-unparse))
 (define: xml-resp-body-converter : (resp -> resp)
   (make-response-body-converter xml-resp-body? xml-unparse))
-
-(module+ test
-  ;; json req
-  (let ()
-    (define r (req 'get (string->url "http://test.com")
-                   #hash()))
-    (check-equal?
-     (json-request-body-converter r)
-     r))
-  (let () 
-    (define method 'get)
-    (define uri (string->url "http://test.com"))
-    (define r (req method uri
-                   `#hash((content-type . "application/json")
-                          (body . ,(cast (hash) Any)))))
-    (check-equal?
-     (json-request-body-converter r)
-     (req method uri 
-          #hash((body . "{}")
-                (content-type . "application/json")))))
-  ;; json resp
-  (let ()
-    (define r (resp "text/html" 200 "OK" "" #hash((content-type . "text/html; charset=UTF-8"))))
-    (check-equal?
-     (json-resp-body-converter r)
-     r))
-  (let () 
-    (define r (resp "application/json" 200 "OK" "{}" #hash((content-type . "application/json; charset=UTF-8"))))
-    (check-equal?
-     (json-resp-body-converter r)
-     (resp "application/json" 200  "OK"
-           (cast (hash) Any)
-           #hash((content-type . "application/json; charset=UTF-8")))))
-  ;; xml req
-  (let ()
-    (define r (req 'get (string->url "http://test.com")
-                   #hash()))
-    (check-equal?
-     (xml-request-body-converter r)
-     r))
-  (let () 
-    (define method 'get)
-    (define uri (string->url "http://test.com"))
-    (define r (req method uri
-                   `#hash((content-type . "text/xml")
-                          (body . (test ())))))
-    (check-equal?
-     (xml-request-body-converter r)
-     (req method uri 
-          #hash((body . "<test></test>")
-                (content-type . "text/xml")))))
-  ;; xml resp
-  (let ()
-    (define r (resp "text/html" 200 "OK" "" #hash((content-type . "text/html; charset=UTF-8"))))
-    (check-equal?
-     (xml-resp-body-converter r)
-     r))
-  (let () 
-    (define r (resp "text/xml" 200 "OK" "<test/>" #hash((content-type . "text/xml; charset=UTF-8"))))
-    (check-equal?
-     (xml-resp-body-converter r)
-     (resp "text/xml" 200  "OK"
-           '(test ())
-           #hash((content-type . "text/xml; charset=UTF-8"))))))
