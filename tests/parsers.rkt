@@ -29,7 +29,7 @@
   (check-equal?
    (json-resp-body-converter r)
    (resp "application/json" 200  "OK"
-         (hasheq)
+         (make-immutable-hasheq)
          #hash((content-type . "application/json; charset=UTF-8")))))
 ;; xml req
 (let ()
