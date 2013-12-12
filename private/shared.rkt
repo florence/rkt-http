@@ -36,6 +36,7 @@
   (struct-copy req a-req
                [request-map (hash-set (req-request-map a-req) key val)]))
 
-(: header-map-ref : (resp Symbol (-> Any) -> Any))
+(: header-map-ref : (case-> [resp Symbol -> Any]
+                            [resp Symbol (-> Any) -> Any]))
 (define (header-map-ref a-resp key [fail (lambda () #f)])
   (hash-ref (resp-headers a-resp) key fail))

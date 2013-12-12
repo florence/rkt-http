@@ -8,8 +8,7 @@ this module provides the basic middleware for rkt-http
          "private/processors.rkt"
          "parsers.rkt"
          "private/typed-conversions.rkt")
-(require/typed racket/format [~a (Any Any * -> String)])
-(module+ test (require typed/rackunit))
+(require/typed racket/format [~a (Any * -> String)])
 
 
 (define RETRY-LIMIT 10)
@@ -25,11 +24,11 @@ this module provides the basic middleware for rkt-http
          (define name (processor-parameter-wrapper-processor n)) ...
          (define processors (list n ...))))]))
 
-(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> Processor))
-(define (make-processor #:req [req values] #:resp [resp values])
-  (lambda (client)
-    (lambda (r)
-      (resp (client (req r))))))
+(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> FProcessor))
+(define (make-processor #:req [req* values] #:resp [resp* values])
+  (lambda: ([client : (req -> resp)])
+    (lambda: ([r : req])
+      (resp* (client (req* r))))))
 
 
 ;; request only processor to lowercase all header field names
@@ -42,14 +41,14 @@ this module provides the basic middleware for rkt-http
          (error 'processors "expected hash tables for headers, given ~a" cur-headers)
          (cond
            [cur-headers
-            (define: new-headers : (HashTable Symbol Any)
+            (define: new-headers : (HashTable Any Any)
               (for/hash ([(k v) (in-hash cur-headers)])
                 (values (string->symbol (string-downcase (~a k))) v)))
             (request-map-set a-req 'header new-headers)]
            [else a-req])))))
 ;; processor to control redirecting
-(define: in:redirect : Processor
-   (lambda (client)
+(define: in:redirect : FProcessor
+   (lambda: ([client : (req -> resp)])
      (lambda: ([a-req : req])
        (let: loop : resp ([count : Natural 0] [a-req : req a-req])
          (define a-resp (client a-req))
@@ -90,33 +89,7 @@ this module provides the basic middleware for rkt-http
  [retry values])
 
 
-(module+ test
-  (define (check-req-processor processor input output)
-    (check-equal? (((processor) values) input)
-                  output))
-  (check-req-processor content-type 
-                    (req 'get #f #hash((content-type . json)))
-                    (req 'get #f #hash((content-type . "application/json"))))
-  (check-req-processor content-type 
-                    (req 'get #f null)
-                    (req 'get #f null))
-  (check-req-processor lowercase-headers
-                    (req 'get #f #hash((header . #hash((TestHEadEr . "value1")
-                                                        ("E3xDg" . "value2")))))
-                    (req 'get #f #hash((header . #hash((testheader . "value1")
-                                                        (e3xdg . "value2"))))))
-  ;; testing the default redirect client
-  (let ()
-    (define req1 (req 'get #f null))
-    (define response1 (resp "text/tsxt" 301 "anything" "" null))
-    (define response2 (resp "text/tsxt" 500 "anything" "" null))
-    (define (client v)
-      (if (equal? v req1)
-          response1
-          response2))
-    (check-equal?
-     (((redirect) client) req1)
-     response2)))
+
 
 
 
