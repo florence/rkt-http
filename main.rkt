@@ -1,36 +1,35 @@
-#lang racket
+#lang typed/racket
 (provide 
- (contract-out
-  [request (->* (method/c string?) 
-                (#:request-map dict? #:processors (listof processor/c))
-                resp?)]
-  [request/no-process (-> method/c string? resp?)]
-  [method/c contract?]
-  [processor/c contract?]
-  [no-op processor/c]
-  [make-processor (->* ()
-                       (#:req (-> req? req?) #:resp (-> resp? resp?))
-                       processor/c)])
- (rename-out [processors default-processors])
+ ;; top level
+ request request/no-process
+ ;; types
+ Method Processor 
  (struct-out req)
- (struct-out resp))
+ (struct-out resp)
+ ;; processors
+ no-op make-processor 
+ (rename-out [processors default-processors]))
 
-(require net/url 
+(require "private/typed-conversions.rkt" 
          "processors.rkt"
          "private/shared.rkt"
          "private/parse.rkt"
          "private/processors.rkt")
 (module+ test (require rackunit))
 
-(define (request method url #:request-map [request-map null] #:processors [processors processors])
+(define EMPTY-REQ-MAP ((inst hash Symbol Any)))
+
+(: request : (Method String [#:request-map (HashTable Symbol Any)] [#:processors (Listof Processor)] -> resp))
+(define (request method url #:request-map [request-map EMPTY-REQ-MAP] #:processors [processors processors])
   (call-middleware (req method (string->url url) request-map) processors))
 
+(: request/no-process : (Method String -> resp)) 
 (define (request/no-process method url)
-  (request method url #:request-map null #:processors null))
+  (request method url #:request-map EMPTY-REQ-MAP #:processors null))
 
-;; req? -> resp?
+(: call-middleware : (req (Listof Processor) -> resp))
 (define (call-middleware req processors)
-  (define chain
+  (define: chain : Request-Response
     (for/fold ([call http-invoke]) ([p processors])
      (define processor
        (if (not (processor-parameter-wrapper? p))
@@ -39,45 +38,30 @@
      (processor call)))
    (chain req))
 
-;; req? -> resp?
+(: http-invoke : (req -> resp))
 (define (http-invoke req)
-  (parse-impure-port
-   ((case (req-method req)
+  (define: impure : (url (Listof String) -> Input-Port)
+    (case (req-method req)
       [(get)    get-impure-port]
-      [(post)   post-impure-port]
+      [(post)   (error 'http "method not implemented")#;post-impure-port]
       [(delete) delete-impure-port]
-      [(put)    put-impure-port]
+      [(put)    (error 'http "method not implemented")#;put-impure-port]
       [(head)   head-impure-port]
       ;; TODO error class
-      [(#f) (error 'http "method not set")])
-    (req-uri req)
+      [(#f) (error 'http "method not set")]))
+  (define uri (let ([u (req-uri req)]) (if (string? u) (string->url u) u)))
+  (parse-impure-port
+   (impure
+    uri
     (build-headers req))))
 
+(: build-headers : (req -> (Listof String)))
 (define (build-headers req)
-  (for/list ([(f v) (in-dict (req-request-map req))])
+  (for/list ([(f v) (in-hash (req-request-map req))])
     (~a f ":" v)))
 
 
-(module+ test 
-  (let ()
-    (define resp (request 'get "http://www.google.com"))
-    (check-equal? (resp-code resp) 200))
-  (let ()
-     (parameterize ([retry values]) ;;testing parameterize the processors
-      (define resp (request 'get "http://www.google.com"))
-      (check-equal? (resp-code resp) 200))) 
-  (let ()
-    (check-exn values (thunk (request #f "http://www.google.com"))))
-  (let ()
-    ;; this redirects, testing that
-    (define resp (request 'get "http://google.com"))
-    (check-equal? (resp-code resp) 200))
-  
-  (let ()
-    (define resp (request 'get 
-                          "http://www.google.com"
-                          #:processors (list (retry))))
-    (check-equal? (resp-code resp) 200)))
+
 
 
 

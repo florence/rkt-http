@@ -1,6 +1,6 @@
 #lang typed/racket
 ;; private bindings for processors
-(provide Request-Response FProcessor Processor processor-parameter-wrapper wrap-processor processor-parameter-wrapper-processor)
+(provide Request-Response FProcessor Processor processor-parameter-wrapper wrap-processor processor-parameter-wrapper-processor processor-parameter-wrapper?)
 (require "shared.rkt")
 
 

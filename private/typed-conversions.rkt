@@ -12,10 +12,16 @@
                                   [path     : (Listof path/param)]
                                   [query    : (Listof (cons Symbol (Option String)))]
                                   [fragment : (Option String)])]
-                       [string->url (String -> url)])
+                       [string->url (String -> url)]
+                       [get-impure-port (url (Listof String) -> Input-Port)]
+                       [delete-impure-port (url (Listof String) -> Input-Port)]
+                       [post-impure-port (url Bytes (Listof String) -> Input-Port)]
+                       [put-impure-port (url Bytes (Listof String) -> Input-Port)]
+                       [head-impure-port (url (Listof String) -> Input-Port)])
 (require/typed/provide web-server/http/request-structs
                        [#:struct header
                                  ([field : Bytes]
                                   [value : Bytes])])
 (require/typed/provide web-server/http/request
                        [read-headers (Input-Port -> (Listof header))])
+(require/typed/provide racket/format [~a (Any * -> String)])

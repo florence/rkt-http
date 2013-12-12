@@ -8,7 +8,7 @@ this module provides the basic middleware for rkt-http
          "private/processors.rkt"
          "parsers.rkt"
          "private/typed-conversions.rkt")
-(require/typed racket/format [~a (Any * -> String)])
+
 
 
 (define RETRY-LIMIT 10)
@@ -37,8 +37,8 @@ this module provides the basic middleware for rkt-http
    #:req
    (lambda: ([a-req : req])
      (define cur-headers (request-map-ref a-req 'header))
-     (if (not (hash? cur-headers))
-         (error 'processors "expected hash tables for headers, given ~a" cur-headers)
+     (if (not (hash? cur-headers)) ;; no headers given
+         a-req
          (cond
            [cur-headers
             (define: new-headers : (HashTable Any Any)
