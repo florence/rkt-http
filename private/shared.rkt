@@ -1,24 +1,41 @@
-#lang racket
+#lang typed/racket
 (provide 
  request-map-ref
  request-map-set
  header-map-ref
- method/c
+ Method
  (struct-out req)
  (struct-out resp))
+(require "typed-conversions.rkt")
 
-(define method/c (or/c 'get 'post 'put 'delete 'head #f))
+(define-type Method (Option (U 'get 'post 'put 'delete 'head)))
+;(define method/c (or/c 'get 'post 'put 'delete 'head #f))
 
 ;; method/c uri? (or/c symbol? string?) (dict-of symbol? string?)
-(struct req (method uri request-map) #:transparent)
+(struct: req ([method : Method]
+              [uri : (U url String)]
+              [request-map : (HashTable Symbol Any)])
+  #:transparent)
 
 ;; string? number? string? any/c (dict-of symbol? any/c)
-(struct resp (content-type code status body headers) #:transparent)
+(struct: resp ([content-type : String] 
+               [code : Positive-Integer]
+               [status : String]
+               [body : Any]
+               [headers : (HashTable Symbol Any)]) 
+  #:transparent)
 
+(: request-map-ref : (case-> 
+                      [req Symbol -> Any]
+                      [req Symbol (-> Any) -> Any]))
 (define (request-map-ref req key [fail (lambda () #f)])
-  (dict-ref (req-request-map req) key fail))
+  (hash-ref (req-request-map req) key fail))
+
+(: request-map-set : (req Symbol Any -> req))
 (define (request-map-set a-req key val)
   (struct-copy req a-req
-               [request-map (dict-set (req-request-map a-req) key val)]))
+               [request-map (hash-set (req-request-map a-req) key val)]))
+
+(: header-map-ref : (resp Symbol (-> Any) -> Any))
 (define (header-map-ref a-resp key [fail (lambda () #f)])
-  (dict-ref (resp-headers a-resp) key fail))
+  (hash-ref (resp-headers a-resp) key fail))

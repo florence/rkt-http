@@ -1,19 +1,15 @@
-#lang racket
+#lang typed/racket
 #|
 this module provides the basic middleware for rkt-http
 |#
-(provide 
- (contract-out
-  [no-op processor/c]
-  [make-processor (->* ()
-                        (#:req (-> req? req?) #:resp (-> resp? resp?))
-                        processor/c)]))
+(provide no-op make-processor)
 
 (require "private/shared.rkt" 
          "private/processors.rkt"
          "parsers.rkt"
-         net/url)
-(module+ test (require rackunit))
+         "private/typed-conversions.rkt")
+(require/typed racket/format [~a (Any Any * -> String)])
+(module+ test (require typed/rackunit))
 
 
 (define RETRY-LIMIT 10)
@@ -24,13 +20,12 @@ this module provides the basic middleware for rkt-http
     [(_ [name thunk] ...)
      (with-syntax ([(n ...) (generate-temporaries #'(name ...))])
      #'(begin
-         (provide (contract-out
-                   [processors (listof processor/c)]
-                   [name (parameter/c processor/c)] ...))
+         (provide processors name ...)
          (define n (wrap-processor thunk)) ...
          (define name (processor-parameter-wrapper-processor n)) ...
          (define processors (list n ...))))]))
 
+(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> Processor))
 (define (make-processor #:req [req values] #:resp [resp values])
   (lambda (client)
     (lambda (r)
@@ -41,20 +36,22 @@ this module provides the basic middleware for rkt-http
 (define in:lowercase-headers
   (make-processor
    #:req
-   (lambda (a-req)
+   (lambda: ([a-req : req])
      (define cur-headers (request-map-ref a-req 'header))
-     (cond
-       [cur-headers
-        (define new-headers
-          (for/hash ([(k v) (in-dict cur-headers)])
-            (values (string->symbol (string-downcase (~a k))) v)))
-        (request-map-set a-req 'header new-headers)]
-       [else a-req]))))
+     (if (not (hash? cur-headers))
+         (error 'processors "expected hash tables for headers, given ~a" cur-headers)
+         (cond
+           [cur-headers
+            (define: new-headers : (HashTable Symbol Any)
+              (for/hash ([(k v) (in-hash cur-headers)])
+                (values (string->symbol (string-downcase (~a k))) v)))
+            (request-map-set a-req 'header new-headers)]
+           [else a-req])))))
 ;; processor to control redirecting
-(define in:redirect
+(define: in:redirect : Processor
    (lambda (client)
-     (lambda (a-req)
-       (let loop ([count 0] [a-req a-req])
+     (lambda: ([a-req : req])
+       (let: loop : resp ([count : Natural 0] [a-req : req a-req])
          (define a-resp (client a-req))
          (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
              a-resp
@@ -65,7 +62,7 @@ this module provides the basic middleware for rkt-http
 (define in:content-type
   (make-processor
    #:req 
-   (lambda (a-req)
+   (lambda: ([a-req : req])
      (define ctype (request-map-ref a-req 'content-type))
      (cond
        [ctype

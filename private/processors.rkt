@@ -1,12 +1,16 @@
-#lang racket
+#lang typed/racket
 ;; private bindings for processors
-(provide processor/c wrap-processor processor-parameter-wrapper?
-         processor-parameter-wrapper-processor)
+(provide Processor wrap-processor processor-parameter-wrapper
+         processor-parameter-wrapper-processor Request-Response)
 (require "shared.rkt")
 
-(define request-response/c (-> req? resp?))
-(struct processor-parameter-wrapper (processor))
+
+(define-type Request-Response (req -> resp))
+(struct: processor-parameter-wrapper ([processor : (Parameterof Processor)]))
+(: wrap-processor : (Processor -> Processor))
 (define (wrap-processor p)
   (processor-parameter-wrapper (make-parameter p)))
-(define processor/c (or/c processor-parameter-wrapper?
-                          (-> request-response/c request-response/c)))
+
+(define-type Processor
+  (U processor-parameter-wrapper
+     (Request-Response -> Request-Response)))
