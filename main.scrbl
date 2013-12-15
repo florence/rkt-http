@@ -11,14 +11,14 @@
 @defproc[(request/no-process (method Method)
                              (url String))
          resp]
-Makes a request of type method to the given url. Equivlanet to @racket[(request method url #:request-map empty #:processors empty)].
+Makes a request of type method to the given url. Equivalent to @racket[(request method url #:request-map empty #:processors empty)].
 This method is the most basic of http requests, doing no pre or post processing on the request. The response body
 will be a string containing the raw results.
 
 @defproc[(request (method Method)
                   (url String)
                   (#:request-map request-map HashTable (hash))
-                  (#:processors processors (listof Processor) default-processors))
+                  (#:processors processors (Listof Processor) default-processors))
          resp]
 Makes an http request using the given method, to the given url. For each call a @racket[req] structure is created,
 and passed down the chain of processors, until it hits the bottom. Then a @racket[resp] structure is created for the response,
@@ -37,7 +37,7 @@ are lowercased and converted to symbols.
 @defthing[Processor (-> (-> req resp) (-> req resp))]
 A processors is used to create the processor chain. Each processor will be given the part of the processor
 chair below it, and returns the new function chain with itself on top. A processor will, generally, do its processing on the 
-request, call the chain below it, and preform post prosessing on the response.
+request, call the chain below it, and preform post processing on the response.
 
 @defthing[Method (U 'get 'post 'delete 'put 'head #f)]
 Contract for http methods. If a method is @racket[#f] it expected to be replace by some processor.
@@ -46,7 +46,7 @@ Contract for http methods. If a method is @racket[#f] it expected to be replace 
 
 A processor that does nothing. 
 
-The default processor chain will convert xml and json response bodies into xexprs and jsexprs. To disable this behaviour simply parameterize
+The default processor chain will convert xml and json response bodies into xexprs and jsexprs. To disable this behavior simply parameterize
 the @racket[body-convert] processor to @racket[no-op]:
 
 @racketblock[
