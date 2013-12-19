@@ -10,19 +10,21 @@
 
 @defproc[(request/no-process (method Method)
                              (url String))
-         resp]
+         resp]{
 Makes a request of type method to the given url. Equivalent to @racket[(request method url #:request-map empty #:processors empty)].
 This method is the most basic of http requests, doing no pre or post processing on the request. The response body
 will be a string containing the raw results.
+}
 
 @defproc[(request (method Method)
                   (url String)
                   (#:request-map request-map HashTable (hash))
                   (#:processors processors (Listof Processor) default-processors))
-         resp]
+         resp]{
 Makes an http request using the given method, to the given url. For each call a @racket[req] structure is created,
 and passed down the chain of processors, until it hits the bottom. Then a @racket[resp] structure is created for the response,
 which is then passed back up the chain of processors, until it is returned from @racket[request].
+
 
 @racket[request-map] is a @racket[HashTable] containing parameters for the request. Every element of the map is optional.
 
@@ -33,18 +35,21 @@ where the keys are the header fields and the values are the header values. These
 
 Before the @racket[resp] is returned to the bottom of the processor chain the headers @racket[dict] is normalize so that all keys
 are lowercased and converted to symbols.
+}
 
-@defthing[Processor (-> (-> req resp) (-> req resp))]
-A processors is used to create the processor chain. Each processor will be given the part of the processor
+@defthing[Processor (-> (-> req resp) (-> req resp))]{
+A Processor is used to create the processor chain. Each processor will be given the part of the processor
 chair below it, and returns the new function chain with itself on top. A processor will, generally, do its processing on the 
 request, call the chain below it, and preform post processing on the response.
+}
 
-@defthing[Method (U 'get 'post 'delete 'put 'head #f)]
-Contract for http methods. If a method is @racket[#f] it expected to be replace by some processor.
+@defthing[Method (U 'get 'post 'delete 'put 'head #f)]{
+Type for http methods. If a method is @racket[#f] it expected to be replace by some processor.
+}
 
-@defthing[no-op Processor]
-
+@defthing[no-op Processor]{
 A processor that does nothing. 
+}
 
 The default processor chain will convert xml and json response bodies into xexprs and jsexprs. To disable this behavior simply parameterize
 the @racket[body-convert] processor to @racket[no-op]:
@@ -56,11 +61,12 @@ the @racket[body-convert] processor to @racket[no-op]:
 @defproc[(make-processor 
           (#:req  req (-> req req)  values)
           (#:resp resp (-> resp resp) values))
-         Processor]
+         Processor]{
 
 Creates a basic processor. @racket[req] handles processing the request, and @racket[resp] handles processing the response.
 
 The @racket[no-op] processor could be implemented as @racket[(make-processor)]. 
+}
 
 To parse an new @racket['content-type], combine the @racket[body-convert] processor with @racket[make-processor]:
 
