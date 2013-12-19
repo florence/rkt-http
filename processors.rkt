@@ -87,10 +87,3 @@ this module provides the basic middleware for rkt-http
  ;; final processing
  [body-convert in:body-convert]
  [retry values])
-
-
-
-
-
-
-

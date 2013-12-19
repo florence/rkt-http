@@ -41,6 +41,3 @@
    (define-values (code status) (parse-status-line "HTTP/1.0 420 Enhance Your Calm\r"))
    (check-equal? code 420)
    (check-equal? status "Enhance Your Calm")))
-  
-
-

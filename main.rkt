@@ -4,6 +4,7 @@
  request request/no-process
  ;; types
  Method Processor 
+ ;; structures
  (struct-out req)
  (struct-out resp)
  ;; processors
@@ -59,16 +60,3 @@
 (define (build-headers req)
   (for/list ([(f v) (in-hash (req-request-map req))])
     (~a f ":" v)))
-
-
-
-
-
-
-
-
-
-
-
-
-
