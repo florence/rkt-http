@@ -4,6 +4,7 @@ this module provides the basic middleware for rkt-http
 |#
 (provide no-op make-processor)
 
+(require typed/net/url)
 (require "private/shared.rkt" 
          "private/processors.rkt"
          "parsers.rkt"

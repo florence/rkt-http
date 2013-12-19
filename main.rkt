@@ -11,6 +11,7 @@
  no-op make-processor 
  (rename-out [processors default-processors]))
 
+(require typed/net/url)
 (require "private/typed-conversions.rkt" 
          "processors.rkt"
          "private/shared.rkt"

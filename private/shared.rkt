@@ -6,6 +6,7 @@
  Method
  (struct-out req)
  (struct-out resp))
+(require typed/net/url)
 (require "typed-conversions.rkt")
 
 (define-type Method (Option (U 'get 'post 'put 'delete 'head)))
