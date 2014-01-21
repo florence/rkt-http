@@ -16,6 +16,8 @@ this module provides bindings to convert request and response bodies to and from
                [#:opaque Xexpr xexpr?]
                [(xexpr->string x:xexpr->string) (Xexpr -> String)]
                [(string->xexpr x:string->xexpr) (String -> Xexpr)])
+(require/typed racket/format
+               [~a (Any -> String)])
 
 (: make-body-converter : (All (R V P) ((R -> Any) (V -> P) (R -> V) (R P -> R) -> (R -> R))))
 ;; makes a function that takes in an R, checks if it matches recognize?, and sets the value via parse
@@ -46,7 +48,8 @@ this module provides bindings to convert request and response bodies to and from
 (: xml-body? : (All (R) ((R -> Any) (R -> Any) -> (R -> (Option Any)))))
 ;; does this have a xexpr body and an application/TODO content-type
 (define ((xml-body? body-getter header-getter) r)
-  (and (equal? (header-getter r) "text/xml")
+  (and (or (regexp-match "text/xml" (~a (header-getter r)))
+           (regexp-match "text/html" (~a (header-getter r))))
        (body-getter r)))
 
 (: xml-parse : (Any -> Any))

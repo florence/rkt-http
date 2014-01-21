@@ -9,6 +9,7 @@
  (struct-out resp)
  ;; processors
  no-op make-processor 
+ body-convert
  (rename-out [processors default-processors]))
 
 (require typed/net/url)
