@@ -1,6 +1,6 @@
 #lang typed/racket
 (require "../processors.rkt" "../private/processors.rkt" typed/rackunit "../private/typed-conversions.rkt" "../private/shared.rkt")
-(: check-req-processor : ((Parameterof FProcessor) req req -> Any))
+(: check-req-processor : ((Parameterof Processor) req req -> Any))
 (define (check-req-processor processor input output)
   (define (check req)
     (check-equal? req output)

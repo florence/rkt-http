@@ -18,14 +18,12 @@ this module provides the basic middleware for rkt-http
 (define-syntax (create-processor stx)
   (syntax-case stx ()
     [(_ [name thunk] ...)
-     (with-syntax ([(n ...) (generate-temporaries #'(name ...))])
      #'(begin
-         (provide processors name ...)
-         (define n (wrap-processor thunk)) ...
-         (define name (processor-parameter-wrapper-processor n)) ...
-         (define processors (list n ...))))]))
+         (provide default-processors name ...)
+         (define-values (name ...) (values (wrap-processor thunk) ...))
+         (define default-processors (list name ...)))]))
 
-(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> FProcessor))
+(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> Processor))
 (define (make-processor #:req [req* values] #:resp [resp* values])
   (lambda: ([client : (req -> resp)])
     (lambda: ([r : req])
@@ -48,7 +46,7 @@ this module provides the basic middleware for rkt-http
             (request-map-set a-req 'header new-headers)]
            [else a-req])))))
 ;; processor to control redirecting
-(define: in:redirect : FProcessor
+(define: in:redirect : Processor
    (lambda: ([client : (req -> resp)])
      (lambda: ([a-req : req])
        (let: loop : resp ([count : Natural 0] [a-req : req a-req])
@@ -78,6 +76,7 @@ this module provides the basic middleware for rkt-http
    #:req (compose json-request-body-converter xml-request-body-converter)
    #:resp (compose json-resp-body-converter xml-resp-body-converter)))
 ;; a no-op processor
+(: no-op : Processor)
 (define no-op values)
 
 (create-processor

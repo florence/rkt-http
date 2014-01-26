@@ -6,11 +6,7 @@
  Method Processor 
  ;; structures
  (struct-out req)
- (struct-out resp)
- ;; processors
- no-op make-processor 
- body-convert
- (rename-out [processors default-processors]))
+ (struct-out resp))
 
 (require typed/net/url)
 (require "private/typed-conversions.rkt" 
@@ -22,22 +18,22 @@
 
 (define EMPTY-REQ-MAP ((inst hash Symbol Any)))
 
-(: request : (Method String [#:request-map (HashTable Symbol Any)] [#:processors (Listof Processor)] -> resp))
-(define (request method url #:request-map [request-map EMPTY-REQ-MAP] #:processors [processors processors])
+(: request : (Method String [#:request-map (HashTable Symbol Any)] [#:processors (Listof (U (Parameterof Processor) Processor))] -> resp))
+(define (request method url #:request-map [request-map EMPTY-REQ-MAP] #:processors [processors default-processors])
   (call-middleware (req method (string->url url) request-map) processors))
 
 (: request/no-process : (Method String -> resp)) 
 (define (request/no-process method url)
   (request method url #:request-map EMPTY-REQ-MAP #:processors null))
 
-(: call-middleware : (req (Listof Processor) -> resp))
+(: call-middleware : (req (Listof (U (Parameterof Processor) Processor)) -> resp))
 (define (call-middleware req processors)
   (define: chain : Request-Response
     (for/fold ([call http-invoke]) ([p processors])
-     (define processor
-       (if (not (processor-parameter-wrapper? p))
-           p
-           ((processor-parameter-wrapper-processor p))))
+     (define: processor : Processor
+       (if (not (parameter? p))
+           (cast p Processor)
+           (p)))
      (processor call)))
    (chain req))
 
