@@ -1,8 +1,12 @@
 #lang typed/racket
 #|
-this module provides the basic middleware for rkt-http
+this module provides the basic middleware for rkt-http, as well as the
+basic tools for writing them
 |#
-(provide no-op make-processor)
+(provide no-op make-processor
+         request-map-ref
+         request-map-set
+         header-map-ref)
 
 (require typed/net/url)
 (require "private/shared.rkt" 
