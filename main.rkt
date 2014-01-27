@@ -29,7 +29,7 @@
 (: call-middleware : (req (Listof (U (Parameterof Processor) Processor)) -> resp))
 (define (call-middleware req processors)
   (define: chain : Request-Response
-    (for/fold ([call http-invoke]) ([p processors])
+    (for/fold ([call http-invoke]) ([p (reverse processors)])
      (define: processor : Processor
        (if (not (parameter? p))
            (cast p Processor)
@@ -48,6 +48,7 @@
       [(head)   head-impure-port]
       ;; TODO error class
       [(#f) (error 'http "method not set")]))
+  (: uri url)     
   (define uri (let ([u (req-uri req)]) (if (string? u) (string->url u) u)))
   (parse-impure-port
    (impure

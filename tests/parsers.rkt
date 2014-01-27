@@ -24,11 +24,19 @@
   (check-equal?
    (json-resp-body-converter r)
    r))
+
 (let () 
   (define r (resp "application/json" 200 "OK" "{}" #hash((content-type . "application/json; charset=UTF-8"))))
   (check-equal?
    (json-resp-body-converter r)
    (resp "application/json" 200  "OK"
+         (make-immutable-hasheq)
+         #hash((content-type . "application/json; charset=UTF-8")))))
+(let () 
+  (define r (resp "application/json; charset=utf-8" 400 "OK" "{}" #hash((content-type . "application/json; charset=UTF-8"))))
+  (check-equal?
+   (json-resp-body-converter r)
+   (resp "application/json; charset=utf-8" 400  "OK"
          (make-immutable-hasheq)
          #hash((content-type . "application/json; charset=UTF-8")))))
 ;; xml req

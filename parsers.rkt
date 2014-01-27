@@ -31,7 +31,7 @@ this module provides bindings to convert request and response bodies to and from
 (: json-body? : (All (R) ((R -> Any) (R -> Any) -> (R -> (Option Any)))))
 ;; does this have a jsexpr body and an application/json content-type
 (define ((json-body? body-getter header-getter) r)
-  (and (equal? (header-getter r) "application/json")
+  (and (regexp-match? "^application/json" (~a (header-getter r)))
        (body-getter r)))
 
 (: json-parse : (Any -> Any))
@@ -48,8 +48,8 @@ this module provides bindings to convert request and response bodies to and from
 (: xml-body? : (All (R) ((R -> Any) (R -> Any) -> (R -> (Option Any)))))
 ;; does this have a xexpr body and an application/TODO content-type
 (define ((xml-body? body-getter header-getter) r)
-  (and (or (regexp-match "text/xml" (~a (header-getter r)))
-           (regexp-match "text/html" (~a (header-getter r))))
+  (and (or (regexp-match "^text/xml" (~a (header-getter r)))
+           (regexp-match "^text/html" (~a (header-getter r))))
        (body-getter r)))
 
 (: xml-parse : (Any -> Any))
