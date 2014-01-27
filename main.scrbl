@@ -81,7 +81,7 @@ error from twitter.com after some (un)reasonable wait period, we need something 
 
 @racketblock[
              (define ((retry-twitter-10-times chain) a-req)
-               (let retry-loop ([count 0] [a-resp (client a-req)])
+               (let retry-loop ([count 0] [a-resp (chain a-req)])
                  (cond
                    [(and (< count 10) (= 420 (resp-code a-resp)))
                     (sleep 10)
