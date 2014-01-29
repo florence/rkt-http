@@ -17,7 +17,7 @@
        r2)))
       
 
-(define gist (make-processor #:req entry))
+(define gist (make-processor entry values))
 
 (request 'get BASE-URL
          #:request-map '#hash((gists-for . "florence"))

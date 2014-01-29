@@ -7,7 +7,7 @@
     (define resp (request 'get "http://www.google.com"))
     (check-equal? (resp-code resp) 200))
   (let ()
-    (parameterize ([retry values]) ;;testing parameterize the processors
+    (parameterize ([retry no-op]) ;;testing parameterize the processors
       (define resp (request 'get "http://www.google.com"))
       (check-equal? (resp-code resp) 200))) 
   (let ()

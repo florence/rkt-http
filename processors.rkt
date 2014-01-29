@@ -24,20 +24,14 @@ basic tools for writing them
     [(_ [name thunk] ...)
      #'(begin
          (provide default-processors name ...)
-         (define-values (name ...) (values (wrap-processor thunk) ...))
+         (define name thunk) ...
+         (: default-processors : (Listof Processor))
          (define default-processors (list name ...)))]))
-
-(: make-processor : ([#:req (req -> req)] [#:resp (resp -> resp)] -> Processor))
-(define (make-processor #:req [req* values] #:resp [resp* values])
-  (lambda: ([client : (req -> resp)])
-    (lambda: ([r : req])
-      (resp* (client (req* r))))))
 
 
 ;; request only processor to lowercase all header field names
 (define in:lowercase-headers
   (make-processor
-   #:req
    (lambda: ([a-req : req])
      (define cur-headers (request-map-ref a-req 'header))
      (if (not (hash? cur-headers)) ;; no headers given
@@ -48,22 +42,23 @@ basic tools for writing them
               (for/hash ([(k v) (in-hash cur-headers)])
                 (values (string->symbol (string-downcase (~a k))) v)))
             (request-map-set a-req 'header new-headers)]
-           [else a-req])))))
+           [else a-req])))
+   values))
 ;; processor to control redirecting
 (define: in:redirect : Processor
+  (make-processor
    (lambda: ([client : (req -> resp)])
      (lambda: ([a-req : req])
        (let: loop : resp ([count : Natural 0] [a-req : req a-req])
-         (define a-resp (client a-req))
-         (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
-             a-resp
-             (loop (add1 count)
-                   (struct-copy req a-req
-                                [uri (string->url (~a (header-map-ref a-resp 'location)))])))))))
+             (define a-resp (client a-req))
+             (if (or (not (= 301 (resp-code a-resp))) (= count RETRY-LIMIT))
+                 a-resp
+                 (loop (add1 count)
+                       (struct-copy req a-req
+                                    [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))))
 ;; request only processor to handle setting the content-type header
 (define in:content-type
   (make-processor
-   #:req 
    (lambda: ([a-req : req])
      (define ctype (request-map-ref a-req 'content-type))
      (cond
@@ -73,15 +68,16 @@ basic tools for writing them
               ctype
               (string-append "application/" (~a ctype))))
         (request-map-set a-req 'content-type parsed-ctype)]
-       [else a-req]))))
+       [else a-req]))
+   values))
 ;; processor to convert xexprs and that ilk to strings given the content type
 (define in:body-convert
   (make-processor
-   #:req (compose json-request-body-converter xml-request-body-converter)
-   #:resp (compose json-resp-body-converter xml-resp-body-converter)))
+   (compose json-request-body-converter xml-request-body-converter)
+   (compose json-resp-body-converter xml-resp-body-converter)))
 ;; a no-op processor
 (: no-op : Processor)
-(define no-op values)
+(define no-op (make-processor values))
 
 (create-processor
  [lowercase-headers in:lowercase-headers]
@@ -90,4 +86,4 @@ basic tools for writing them
  [content-type in:content-type]
  ;; final processing
  [body-convert in:body-convert]
- [retry values])
+ [retry (make-processor values)])
