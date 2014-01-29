@@ -10,7 +10,7 @@
        (case->
         [-> P]
         [P -> Void]
-        [Request-Response Any -> Request-Response])))
+        [Request-Response Any -> Request-Response])));Warning! Here be hacks
 
 (: make-processor 
    (case->
@@ -32,7 +32,7 @@
             (if (undefined? bound)
                 (error 'rkt-http "internal error. please report.")
                 bound)]
-           [(new) (set! p (lambda: ([r->r : Request-Response]) (new r->r (void))))]
+           [(new) (set! p (lambda: ([r->r : Request-Response]) (new r->r (void))))];Warning! Here be hacks
            [(r->r _) (p r->r)])])
        bound)]))
      
