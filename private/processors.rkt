@@ -32,7 +32,9 @@
             (if (undefined? bound)
                 (error 'rkt-http "internal error. please report.")
                 bound)]
-           [(new) (set! p (lambda: ([r->r : Request-Response]) (new r->r (void))))];Warning! Here be hacks
+           [(new)
+            (when (not (eq? new bound));Otherwise we get an infinite loop
+              (set! p (lambda: ([r->r : Request-Response]) (new r->r (void)))))];Warning! Here be hacks
            [(r->r _) (p r->r)])])
        bound)]))
      
