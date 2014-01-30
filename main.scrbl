@@ -37,11 +37,21 @@ Before the @racket[resp] is returned to the bottom of the processor chain the he
 are lowercased and converted to symbols.
 }
 
-@defthing[Processor (-> (-> req resp) (-> req resp))]{
-A Processor is used to create the processor chain. Each processor will be given the part of the processor
-chair below it, and returns the new function chain with itself on top. A processor will, generally, do its processing on the 
-request, call the chain below it, and preform post processing on the response.
+@defthing[Processor]{
+A Processor is used to create the processor chain. Processors can be thought of as functions with the type @racket[((req -> resp) -> (req -> resp)].
+Each Processor will be given the part of the processor chair below it, and returns the new function chain with itself on top.
+A processor will, generally, do its processing on the request, call the chain below it, and preform post processing on the response.
 }
+
+@defproc*[(make-processor [req-handler (req -> req)] [resp-handler (resp -> resp)])
+          (make-processor [full-handler ((req -> resp) -> (req -> resp))
+          Processor])] {
+          Used to create processors.
+          The first case takes in seperate functions to handle the request and response, and is generally useful when only needing to deal with the request or response.
+          The second case is used when the processors needs to handle the request and response in a non-independent way. It will be given the part of the processor chain below it.
+          Calling the given @racket[(req -> resp)] will involk the lower part of the chain, making the http call and generating the response.
+}
+                          
 
 @defthing[Method (U 'get 'post 'delete 'put 'head #f)]{
 Type for http methods. If a method is @racket[#f] it expected to be replace by some processor.
@@ -55,25 +65,18 @@ The default processor chain will convert xml and json response bodies into xexpr
 the @racket[body-convert] processor to @racket[no-op]:
 
 @racketblock[
-        (parameterize ([body-convert no-op])
+        (with-processors ([body-convert no-op])
           (request 'get "www.racket-lang.org"))]
 
-@defproc[(make-processor 
-          (#:req  req (-> req req)  values)
-          (#:resp resp (-> resp resp) values))
-         Processor]{
-
-Creates a basic processor. @racket[req] handles processing the request, and @racket[resp] handles processing the response.
-
-The @racket[no-op] processor could be implemented as @racket[(make-processor)]. 
+The @racket[no-op] processor could be implemented as @racket[(make-processor values values)]. 
 }
 
 To parse an new @racket['content-type], combine the @racket[body-convert] processor with @racket[make-processor]:
 
 @racketblock[
-             (parameterize ([body-convert
-                             (make-processor #:request convert-my-request-body
-                                             #:response convert-my-response-body)])
+             (with-processors ([body-convert
+                                (make-processor convert-my-request-body
+                                                convert-my-response-body)])
                (request 'get "www.mydomain.com" #hash((body . "my-strange-body-format"))))]
 
 However, some processors can not be written with make-processor. For example, to retry a request on a @racket[420] "Enhance Your Calm"
@@ -88,5 +91,5 @@ error from twitter.com after some (un)reasonable wait period, we need something 
                     (retry-loop (add1 count) (client a-req))]
                    [else a-resp])))
              
-             (parameterize ([retry retry-twitter-10-times])
+             (with-processors ([retry (make-processor retry-twitter-10-times)])
                (request 'post "www.twitter.com" REQUEST-MAP))]
