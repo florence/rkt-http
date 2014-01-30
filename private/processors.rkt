@@ -1,6 +1,6 @@
 #lang typed/racket
 ;; private bindings for processors
-(provide Request-Response Processor make-processor)
+(provide Request-Response Processor make-processor with-processors)
 (require "shared.rkt")
 
 
@@ -37,7 +37,13 @@
               (set! p (lambda: ([r->r : Request-Response]) (new r->r (void)))))];Warning! Here be hacks
            [(r->r _) (p r->r)])])
        bound)]))
-     
-    
 
-  
+(define-syntax (with-processors stx)
+  (syntax-case stx ()
+    [(_ ([proc bind] ...) body ...)
+     (with-syntax ([(saved ...) (generate-temporaries #'(proc ...))])
+       #'(let ([saved (proc)] ...)
+           (dynamic-wind
+             (lambda () (proc bind) ...)
+             (lambda () body ...)
+             (lambda () (proc saved) ...))))]))

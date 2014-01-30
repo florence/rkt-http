@@ -1,7 +1,7 @@
 #lang typed/racket
 (provide 
  ;; top level
- request request/no-process
+ request request/no-process with-processors
  ;; types
  Method Processor 
  ;; structures

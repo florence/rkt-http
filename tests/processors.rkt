@@ -1,11 +1,12 @@
 #lang typed/racket
 (require "../processors.rkt" "../private/processors.rkt" typed/rackunit "../private/typed-conversions.rkt" "../private/shared.rkt")
-(: check-req-processor : ((Parameterof Processor) req req -> Any))
+(: check-req-processor : (Processor req req -> Any))
 (define (check-req-processor processor input output)
+  (: check : (req -> resp))
   (define (check req)
     (check-equal? req output)
     (resp "text/tsxt" 301 "anything" "" (hash)))
-  (void (((processor) check) input)))
+  (void ((processor check (void)) input)))
 (check-req-processor content-type 
                      (req 'get "" #hash((content-type . json)))
                      (req 'get "" #hash((content-type . "application/json"))))
@@ -27,5 +28,5 @@
         response1
         response2))
   (check-equal?
-   (((redirect) client) req1)
+   ((redirect client (void)) req1)
    response2))
