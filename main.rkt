@@ -35,21 +35,21 @@
 
 (: http-invoke : (req -> resp))
 (define (http-invoke req)
-  (define: impure : (url (Listof String) -> Input-Port)
-    (case (req-method req)
-      [(get)    get-impure-port]
-      [(post)   (error 'http "method not implemented")#;post-impure-port]
-      [(delete) delete-impure-port]
-      [(put)    (error 'http "method not implemented")#;put-impure-port]
-      [(head)   head-impure-port]
-      ;; TODO error class
-      [(#f) (error 'http "method not set")]))
-  (: uri url)     
+  (: uri url)
   (define uri (let ([u (req-uri req)]) (if (string? u) (string->url u) u)))
+  (define headers (build-headers req))
+  (define post
+    (let ([v (request-map-ref req 'post)])
+      (if (not v) #"" (string->bytes/locale (~a v)))))
   (parse-impure-port
-   (impure
-    uri
-    (build-headers req))))
+    (case (req-method req)
+      [(get)    (get-impure-port uri headers)]
+      [(post)   (error 'rkt-http "method not implemented")#;(post-impure-port uri post headers)]
+      [(delete) (delete-impure-port uri headers)]
+      [(put)    (error 'rkt-http "method not implemented")#;(put-impure-port uri post headers)]
+      [(head)   (head-impure-port uri headers)]
+      ;; TODO error class
+      [(#f) (error 'http "method not set")])))
 
 (: build-headers : (req -> (Listof String)))
 (define (build-headers req)
