@@ -1,6 +1,6 @@
 #lang scribble/doc
 @(require scribble/manual)
-@(require (for-label racket "main.rkt"))
+@(require (for-label racket "main.rkt" "processors.rkt"))
 
 @title[#:style 'toc]{http}
 
@@ -38,14 +38,13 @@ are lowercased and converted to symbols.
 }
 
 @defthing[Processor]{
-A Processor is used to create the processor chain. Processors can be thought of as functions with the type @racket[((req -> resp) -> (req -> resp)].
+A Processor is used to create the processor chain. Processors can be thought of as functions with the type @racket[((req -> resp) -> (req -> resp))].
 Each Processor will be given the part of the processor chair below it, and returns the new function chain with itself on top.
 A processor will, generally, do its processing on the request, call the chain below it, and preform post processing on the response.
 }
 
-@defproc*[(make-processor [req-handler (req -> req)] [resp-handler (resp -> resp)])
-          (make-processor [full-handler ((req -> resp) -> (req -> resp))
-          Processor])] {
+@defproc*[([(make-processor [req-handler (req -> req)] [resp-handler (resp -> resp)]) Processor]
+           [(make-processor [full-handler ((req -> resp) -> (req -> resp))]) Processor])] {
           Used to create processors.
           The first case takes in seperate functions to handle the request and response, and is generally useful when only needing to deal with the request or response.
           The second case is used when the processors needs to handle the request and response in a non-independent way. It will be given the part of the processor chain below it.
