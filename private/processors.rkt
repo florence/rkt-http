@@ -30,7 +30,7 @@
          (case-lambda
            [()
             (if (undefined? bound)
-                (error 'rkt-http "internal error. please report.")
+                (error 'rkt-http "internal error with an unhelpful message. This should never happen")
                 bound)]
            [(new)
             (when (not (eq? new bound));Otherwise we get an infinite loop
