@@ -43,9 +43,9 @@
   (parse-impure-port
     (case (req-method req)
       [(get)    (get-impure-port uri headers)]
-      [(post)   (error 'rkt-http "method not implemented")#;(post-impure-port uri post headers)]
+      [(post)   (post-impure-port uri post headers)]
       [(delete) (delete-impure-port uri headers)]
-      [(put)    (error 'rkt-http "method not implemented")#;(put-impure-port uri post headers)]
+      [(put)    (put-impure-port uri post headers)]
       [(head)   (head-impure-port uri headers)]
       ;; TODO error class
       [(#f) (error 'http "method not set")])))
