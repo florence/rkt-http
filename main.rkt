@@ -1,7 +1,7 @@
 #lang typed/racket
 (provide 
  ;; top level
- request request/no-process with-processors
+ request request/no-process make-processor
  ;; types
  Method Processor 
  ;; structures
@@ -29,8 +29,7 @@
 (: call-middleware : (req (Listof Processor) -> resp))
 (define (call-middleware req processors)
   (define: chain : Request-Response
-    (for/fold ([call http-invoke]) ([p (reverse processors)])
-     (p call (void))))
+    (flatten-processor-list http-invoke (reverse processors)))
    (chain req))
 
 (: http-invoke : (req -> resp))

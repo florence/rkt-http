@@ -6,7 +6,8 @@
   (define (check req)
     (check-equal? req output)
     (resp "text/tsxt" 301 "anything" "" (hash)))
-  (void ((processor check (void)) input)))
+  (define chain (flatten-processor-list check (list processor)))
+  (void (chain input)))
 (check-req-processor content-type 
                      (req 'get "" #hash((content-type . json)))
                      (req 'get "" #hash((content-type . "application/json"))))
@@ -28,5 +29,5 @@
         response1
         response2))
   (check-equal?
-   ((redirect client (void)) req1)
+   ((flatten-processor-list client (list redirect)) req1)
    response2))

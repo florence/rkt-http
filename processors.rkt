@@ -3,7 +3,7 @@
 this module provides the basic middleware for rkt-http, as well as the
 basic tools for writing them
 |#
-(provide no-op make-processor
+(provide no-op
          request-map-ref
          request-map-set
          header-map-ref)
@@ -14,11 +14,6 @@ basic tools for writing them
          "parsers.rkt"
          "private/typed-conversions.rkt")
 
-
-
-(define RETRY-LIMIT 10)
-
-
 (define-syntax (create-processor stx)
   (syntax-case stx ()
     [(_ [name thunk] ...)
@@ -28,10 +23,9 @@ basic tools for writing them
          (: default-processors : (Listof Processor))
          (define default-processors (list name ...)))]))
 
-
 ;; request only processor to lowercase all header field names
 (define in:lowercase-headers
-  (make-processor
+  (make-processor/parameter
    (lambda: ([a-req : req])
      (define cur-headers (request-map-ref a-req 'header))
      (if (not (hash? cur-headers)) ;; no headers given
@@ -44,9 +38,11 @@ basic tools for writing them
             (request-map-set a-req 'header new-headers)]
            [else a-req])))
    values))
+
 ;; processor to control redirecting
+(define RETRY-LIMIT 10)
 (define: in:redirect : Processor
-  (make-processor
+  (make-processor/parameter
    (lambda: ([client : (req -> resp)])
      (lambda: ([a-req : req])
        (let: loop : resp ([count : Natural 0] [a-req : req a-req])
@@ -56,9 +52,10 @@ basic tools for writing them
                  (loop (add1 count)
                        (struct-copy req a-req
                                     [uri (string->url (~a (header-map-ref a-resp 'location)))]))))))))
+
 ;; request only processor to handle setting the content-type header
 (define in:content-type
-  (make-processor
+  (make-processor/parameter
    (lambda: ([a-req : req])
      (define ctype (request-map-ref a-req 'content-type))
      (cond
@@ -70,13 +67,15 @@ basic tools for writing them
         (request-map-set a-req 'content-type parsed-ctype)]
        [else a-req]))
    values))
+
 ;; processor to convert xexprs and that ilk to strings given the content type
 (define in:body-convert
-  (make-processor
+  (make-processor/parameter
    (compose json-request-body-converter xml-request-body-converter)
    (compose json-resp-body-converter xml-resp-body-converter)))
+
 ;; a no-op processor
-(: no-op : Processor)
+(: no-op : BasicProcessor)
 (define no-op (make-processor values))
 
 (create-processor
@@ -86,4 +85,4 @@ basic tools for writing them
  [content-type in:content-type]
  ;; final processing
  [body-convert in:body-convert]
- [retry (make-processor values)])
+ [retry (make-processor/parameter values)])

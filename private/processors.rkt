@@ -1,49 +1,54 @@
 #lang typed/racket
 ;; private bindings for processors
-(provide Request-Response Processor make-processor with-processors)
+(provide 
+ ;;types
+ Request-Response Processor BasicProcessor RawProcessor
+ ;;functions
+ make-processor
+ make-processor/parameter
+ flatten-processor-list)
+
 (require "shared.rkt")
 
-
 (define-type Request-Response (req -> resp))
-(define-type Processor
-  (Rec P
-       (case->
-        [-> P]
-        [P -> Void]
-        [Request-Response Any -> Request-Response])));Warning! Here be hacks
+(define-type RawProcessor (Request-Response -> Request-Response))
+(struct basic-proc ([raw : RawProcessor]))
+(define-type BasicProcessor basic-proc)
+(define-type Processor 
+  (U BasicProcessor
+     (Parameterof BasicProcessor)))
 
-(: make-processor 
+(: make-processor :
    (case->
-    [(req -> req) (resp -> resp) -> Processor]
-    [(Request-Response -> Request-Response) -> Processor]))
-(define undefined? (make-predicate Undefined))
-(define make-processor
+    [RawProcessor -> BasicProcessor]
+    [(req -> req) (resp -> resp) -> BasicProcessor]))
+(define make-processor 
   (case-lambda
-    [(req* resp*)
+    [(p) (basic-proc p)]
+    [(req* resp*) 
      (make-processor
       (lambda: ([client : Request-Response])
         (lambda: ([r : req])
-          (resp* (client (req* r))))))]
-    [(p)
-     (letrec:
-       ([bound : Processor
-         (case-lambda
-           [()
-            (if (undefined? bound)
-                (error 'rkt-http "internal error with an unhelpful message. This should never happen")
-                bound)]
-           [(new)
-            (when (not (eq? new bound));Otherwise we get an infinite loop
-              (set! p (lambda: ([r->r : Request-Response]) (new r->r (void)))))];Warning! Here be hacks
-           [(r->r _) (p r->r)])])
-       bound)]))
+          (resp* (client (req* r))))))]))
 
-(define-syntax (with-processors stx)
-  (syntax-case stx ()
-    [(_ ([proc bind] ...) body ...)
-     (with-syntax ([(saved ...) (generate-temporaries #'(proc ...))])
-       #'(let ([saved (proc)] ...)
-           (dynamic-wind
-             (lambda () (proc bind) ...)
-             (lambda () body ...)
-             (lambda () (proc saved) ...))))]))
+(: make-processor/parameter : 
+   (case->
+    [RawProcessor -> (Parameterof BasicProcessor)]
+    [(req -> req) (resp -> resp) -> (Parameterof BasicProcessor)]))
+(define make-processor/parameter
+  (case-lambda 
+    [(p) (make-parameter (make-processor p))]
+    [(req* resp*) (make-parameter (make-processor req* resp*))]))
+
+
+(: flatten-processor-list : (Request-Response (Listof Processor) -> Request-Response))
+;;flatten the processors, with the first being the bottom of the chain, after base
+(define (flatten-processor-list base processors)
+  (for/fold ([call base]) ([p processors])
+    ((processor->rawprocessor p) call)))
+
+(: processor->rawprocessor : (Processor -> RawProcessor))
+(define (processor->rawprocessor p)
+  (cond 
+   [(basic-proc? p) (basic-proc-raw p)]
+   [else (processor->rawprocessor (p))]))
