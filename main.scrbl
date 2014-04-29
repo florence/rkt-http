@@ -64,7 +64,7 @@ The default processor chain will convert xml and json response bodies into xexpr
 the @racket[body-convert] processor to @racket[no-op]:
 
 @racketblock[
-        (with-processors ([body-convert no-op])
+        (parameterize ([body-convert no-op])
           (request 'get "www.racket-lang.org"))]
 
 The @racket[no-op] processor could be implemented as @racket[(make-processor values values)]. 
@@ -73,7 +73,7 @@ The @racket[no-op] processor could be implemented as @racket[(make-processor val
 To parse an new @racket['content-type], combine the @racket[body-convert] processor with @racket[make-processor]:
 
 @racketblock[
-             (with-processors ([body-convert
+             (parameterize ([body-convert
                                 (make-processor convert-my-request-body
                                                 convert-my-response-body)])
                (request 'get "www.mydomain.com" #hash((body . "my-strange-body-format"))))]
@@ -90,5 +90,5 @@ error from twitter.com after some (un)reasonable wait period, we need something 
                     (retry-loop (add1 count) (client a-req))]
                    [else a-resp])))
              
-             (with-processors ([retry (make-processor retry-twitter-10-times)])
+             (parameterize ([retry (make-processor retry-twitter-10-times)])
                (request 'post "www.twitter.com" REQUEST-MAP))]
